@@ -1,5 +1,5 @@
 [package]
-name = "composer_autocomplete"
+name = "composer_update_autocomplete"
 version = "1.0.0"
 edition = "2021"
 
