@@ -14,7 +14,7 @@ const COMPOSER_FILE_NAME: &str = "composer.json";
 struct ComposerModules {
     require: Value,
     #[serde(rename = "require-dev")]
-    require_dev: Value,
+    require_dev: Option<Value>,
 }
 
 fn get_current_arg() -> Option<String> {
@@ -55,14 +55,16 @@ fn get_composer_location() -> Result<String> {
             .is_file()
         });
 
-    match dir_entry {
-        Some(entry) => Ok(format!(
-            "{}/{}",
-            entry.file_name().to_str().unwrap_or(""),
-            COMPOSER_FILE_NAME
-        )),
-        None => Err(anyhow!("Could not find composer file")),
-    }
+    dir_entry.map_or_else(
+        || Err(anyhow!("Could not find composer file")),
+        |entry| {
+            Ok(format!(
+                "{}/{}",
+                entry.file_name().to_str().unwrap_or(""),
+                COMPOSER_FILE_NAME
+            ))
+        },
+    )
 }
 
 fn get_composer_modules() -> Result<ComposerModules> {
@@ -93,30 +95,35 @@ fn main() -> Result<()> {
 
     let composer_modules = get_composer_modules()?;
 
-    let require_keys: Vec<String> = match composer_modules.require.as_object() {
-        Some(obj) => obj
-            .keys()
-            .filter(|key| current_arg == "update" || key.starts_with(&current_arg))
-            .cloned()
-            .collect(),
-        None => Vec::new(),
-    };
+    let require_keys: Vec<String> =
+        composer_modules
+            .require
+            .as_object()
+            .map_or_else(Vec::new, |obj| {
+                obj.keys()
+                    .filter(|key| current_arg == "update" || key.starts_with(&current_arg))
+                    .cloned()
+                    .collect()
+            });
 
-    let require_dev_keys: Vec<String> = match composer_modules.require_dev.as_object() {
-        Some(obj) => obj
-            .keys()
-            .filter(|key| current_arg == "update" || key.starts_with(&current_arg))
-            .cloned()
-            .collect(),
-        None => Vec::new(),
-    };
+    let require_dev_keys: Vec<String> =
+        composer_modules
+            .require_dev
+            .map_or_else(Vec::new, |require_dev| {
+                require_dev.as_object().map_or_else(Vec::new, |obj| {
+                    obj.keys()
+                        .filter(|key| current_arg == "update" || key.starts_with(&current_arg))
+                        .cloned()
+                        .collect()
+                })
+            });
 
     for key in require_keys {
-        println!("{}", key);
+        println!("{key}");
     }
 
     for key in require_dev_keys {
-        println!("{}", key);
+        println!("{key}");
     }
 
     Ok(())

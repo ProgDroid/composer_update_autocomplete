@@ -11,7 +11,7 @@ I was tired of typing very long and easy to misspell module names at work.
 ## How (to use)
 
 - Download the binary
-- Add the following lines to your `.bashrc` file:
+- Add any of the following lines to your `.bashrc` file:
 ```bash
 complete -C /path/to/binary docker-compose run --rm composer update # add this if you (like me) run composer inside a docker container
 complete -C /path/to/binary docker-compose run composer update # add this in case you forget to do --rm
